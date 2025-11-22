@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %} - Crear Evento{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center display-4 fw-bold mb-5">Crear Nuevo Evento</h1>
+    
+    <form method="post" enctype="multipart/form-data" class="row g-4">
+        {% csrf_token %}
+        <div class="col-md-8">
+            <input type="text" name="nombre" class="form-control form-control-lg" placeholder="Nombre del evento" required>
+        </div>
+        <div class="col-md-4">
+            <input type="datetime-local" name="fecha_hora" class="form-control form-control-lg" required>
+        </div>
+        <div class="col-md-6">
+            <select name="establecimiento" class="form-select form-select-lg" required>
+                <option value="">Seleccionar establecimiento</option>
+                {% for est in establecimientos %}
+                <option value="{{ est.id }}">{{ est.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <input type="file" name="portada" class="form-control form-control-lg" accept="image/*">
+        </div>
+        
+        <div class="col-12">
+            <h4>Precios en Lempiras</h4>
+            <div class="row">
+                <div class="col-md-4">
+                    <label class="form-label">VIP</label>
+                    <input type="number" name="precio_vip" class="form-control" placeholder="L5000" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Preferencial</label>
+                    <input type="number" name="precio_preferencial" class="form-control" placeholder="L3500" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">General</label>
+                    <input type="number" name="precio_general" class="form-control" placeholder="L2000" required>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 text-center">
+            <button type="submit" class="btn btn-success btn-lg px-5 shadow">
+                Crear Evento
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

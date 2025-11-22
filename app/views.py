@@ -15,7 +15,7 @@ def inicio(request):
     """)
     eventos = cursor.fetchall()
     conn.close()
-    return render(request, 'inicio.html', {'eventos': eventos})
+    return render(request, 'inicio.html', {'eventos': eventos, 'session': request.session})
 
 def login_view(request):
     if request.method == 'POST':
@@ -29,17 +29,13 @@ def login_view(request):
         conn.close()
 
         if usuario and check_password(usuario['password_hash'], password):
-            # FORZAMOS TODO
             request.session['usuario_id'] = usuario['id']
             request.session['primer_nombre'] = usuario['primer_nombre']
-            request.session['rol_id'] = usuario['rol_id']  # <-- ESTO ES LO QUE FALLABA
-            request.session['is_admin'] = True if usuario['rol_id'] == 2 else False
-            request.session.modified = True  # <-- FORZAR QUE GUARDE LA SESIÓN
-            messages.success(request, '¡Bienvenido administrador!')
+            request.session['rol_id'] = usuario['rol_id']  
+            request.session.modified = True
+            messages.success(request, '¡Bienvenido!')
             return redirect('inicio')
-        else:
-            messages.error(request, 'Credenciales incorrectas')
-
+        messages.error(request, 'Credenciales incorrectas')
     return render(request, 'login.html')
 
 def logout_view(request):
@@ -47,13 +43,46 @@ def logout_view(request):
     return redirect('inicio')
 
 def registro(request):
-    pass  
+    if request.method == 'POST':
+        dni = request.POST['dni'].replace('-', '').replace('.', '')
+        if len(dni) != 13:
+            messages.error(request, 'El DNI debe tener 13 dígitos')
+            return render(request, 'registro.html')
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            password_hash = hash_password(request.POST['password'])
+            cursor.execute("""
+                INSERT INTO usuarios 
+                (primer_nombre, primer_apellido, telefono, correo, dni, password_hash)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (
+                request.POST['primer_nombre'],
+                request.POST['primer_apellido'],
+                request.POST['telefono'],
+                request.POST['correo'],
+                dni,
+                password_hash
+            ))
+            conn.commit()
+            messages.success(request, '¡Registro exitoso! Ya puedes iniciar sesión')
+            conn.close()
+            return redirect('login')
+        except mysql.connector.Error as err:
+            messages.error(request, f'Error: {err.msg}')
+            conn.close()
+        except Exception as e:
+            messages.error(request, f'Error inesperado: {str(e)}')
+            conn.close()
+        pass
+    return render(request, 'registro.html')
 
 def detalle_evento(request, evento_id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # Obtener el evento
+
     cursor.execute("""
         SELECT e.*, est.nombre as establecimiento_nombre
         FROM eventos e
@@ -66,14 +95,13 @@ def detalle_evento(request, evento_id):
         conn.close()
         messages.error(request, "Evento no encontrado")
         return redirect('inicio')
-    
-    # Obtener precios por zona
+  
     cursor.execute("SELECT zona, precio FROM precios_evento WHERE evento_id = %s", (evento_id,))
     precios_raw = cursor.fetchall()
     precios = {p['zona']: p['precio'] for p in precios_raw}
     conn.close()
     
-    # Procesar compra rápida
+
     if request.method == 'POST':
         try:
             vip = int(request.POST.get('cantidad_vip', 0))
@@ -128,61 +156,80 @@ def seleccionar_asientos(request, evento_id):
     asientos = cursor.fetchall()
     conn.close()
     return render(request, 'seleccionar_asientos.html', {'evento': evento, 'asientos': asientos})
+    pass
 
 @admin_required
 def crear_evento(request):
+    
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id, nombre FROM establecimientos")
-    establecimientos = cursor.fetchall()
 
+    if request.session.get('rol_id') != 2:
+        messages.error(request, "Solo administradores pueden crear eventos")
+        return redirect('inicio')    
+
+    cursor.execute("SELECT id, nombre FROM establecimientos ORDER BY nombre")
+    establecimientos = cursor.fetchall()
+    
     if request.method == 'POST':
+   
+        nuevo_establecimiento = request.POST.get('nuevo_establecimiento')
+        establecimiento_id = request.POST.get('establecimiento')
+        
+        if nuevo_establecimiento:
+            cursor.execute("INSERT INTO establecimientos (nombre, descripcion, layout_type, filas, columnas) VALUES (%s, 'Creado por admin', 'rectangular', 15, 10)", (nuevo_establecimiento,))
+            establecimiento_id = cursor.lastrowid
+            messages.success(request, f"Nuevo establecimiento '{nuevo_establecimiento}' creado")
+        elif not establecimiento_id:
+            messages.error(request, "Selecciona o crea un establecimiento")
+            conn.close()
+            return render(request, 'crear_evento.html', {'establecimientos': establecimientos})
+        
         nombre = request.POST['nombre']
         fecha_hora = request.POST['fecha_hora']
-        establecimiento_id = request.POST['establecimiento']
-
-        # SUBIR FOTO
+        
+   
         imagen_portada = None
         if 'portada' in request.FILES:
             portada = request.FILES['portada']
             filename = f"eventos/{portada.name}"
             path = os.path.join(settings.MEDIA_ROOT, filename)
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(path, 'wb+') as destino:
+            with open(path, 'wb+') as f:
                 for chunk in portada.chunks():
-                    destino.write(chunk)
+                    f.write(chunk)
             imagen_portada = filename
-
+        
         cursor.execute("""
             INSERT INTO eventos (nombre, fecha_hora, establecimiento_id, imagen_portada, activo)
             VALUES (%s, %s, %s, %s, TRUE)
         """, (nombre, fecha_hora, establecimiento_id, imagen_portada))
         evento_id = cursor.lastrowid
+        
 
-        # Precios por zona
         for zona in ['vip', 'preferencial', 'general']:
             precio = request.POST.get(f'precio_{zona}')
-            if precio and precio.isdigit():
+            if precio:
                 cursor.execute("INSERT INTO precios_evento (evento_id, zona, precio) VALUES (%s, %s, %s)",
                                (evento_id, zona, precio))
-
+        
         conn.commit()
         conn.close()
-        messages.success(request, '¡Evento creado con éxito y foto subida!')
+        messages.success(request, "¡Evento creado con éxito!")
         return redirect('inicio')
-
+    
     conn.close()
     return render(request, 'crear_evento.html', {'establecimientos': establecimientos})
 
 def borrar_evento(request, evento_id):
-    if not request.session.get('is_admin') and request.session.get('rol_id') != 2:
-        messages.error(request, "No tienes permiso")
+    if request.session.get('rol_id') != 2:
+        messages.error(request, "Solo administradores pueden eliminar eventos")
         return redirect('inicio')
-    
+
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM eventos WHERE id = %s", (evento_id,))
     conn.commit()
     conn.close()
-    messages.success(request, "Evento eliminado con éxito")
+    messages.success(request, "Evento eliminado correctamente")
     return redirect('inicio')

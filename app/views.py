@@ -1,4 +1,3 @@
-# app/views.py  <-- VERSIÓN FINAL 100% FUNCIONAL
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.conf import settings
@@ -16,7 +15,7 @@ def inicio(request):
     """)
     eventos = cursor.fetchall()
     conn.close()
-    return render(request, 'inicio.html', {'eventos': eventos, 'session': request.session})
+    return render(request, 'inicio.html', {'eventos': eventos})
 
 def login_view(request):
     if request.method == 'POST':
@@ -33,12 +32,10 @@ def login_view(request):
             request.session['usuario_id'] = usuario['id']
             request.session['primer_nombre'] = usuario['primer_nombre']
             request.session['rol_id'] = usuario['rol_id']
-            request.session.modified = True
-            messages.success(request, f'Bienvenido {usuario["primer_nombre"]}')
+            request.session.modified = True  
+            messages.success(request, '¡Bienvenido!')
             return redirect('inicio')
-        else:
-            messages.error(request, 'Credenciales incorrectas')
-
+        messages.error(request, 'Credenciales incorrectas')
     return render(request, 'login.html')
 
 def logout_view(request):
@@ -46,36 +43,7 @@ def logout_view(request):
     return redirect('inicio')
 
 def registro(request):
-    if request.method == 'POST':
-        dni = request.POST['dni'].replace('-', '').replace('.', '')
-        if len(dni) != 13:
-            messages.error(request, 'DNI debe tener 13 dígitos')
-            return render(request, 'registro.html')
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        try:
-            password_hash = hash_password(request.POST['password'])
-            cursor.execute("""
-                INSERT INTO usuarios (primer_nombre, primer_apellido, telefono, correo, dni, password_hash)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (
-                request.POST['primer_nombre'],
-                request.POST['primer_apellido'],
-                request.POST['telefono'],
-                request.POST['correo'],
-                dni,
-                password_hash
-            ))
-            conn.commit()
-            messages.success(request, 'Registro exitoso')
-            return redirect('login')
-        except Exception as e:
-            messages.error(request, f'Error: {e}')
-        finally:
-            conn.close()
-
-    return render(request, 'registro.html')
+    pass  
 
 def detalle_evento(request, evento_id):
     conn = get_db_connection()
@@ -99,7 +67,8 @@ def seleccionar_asientos(request, evento_id):
     cursor.execute("SELECT * FROM eventos WHERE id = %s", (evento_id,))
     evento = cursor.fetchone()
     cursor.execute("""
-        SELECT a.*, IF(b.asiento_id IS NOT NULL, 1, 0) as ocupado
+        SELECT a.id, a.fila, a.columna, a.zona,
+               IFNULL(b.asiento_id, 0) as ocupado
         FROM asientos a
         LEFT JOIN boletos b ON a.id = b.asiento_id
         LEFT JOIN compras c ON b.compra_id = c.id AND c.evento_id = %s
@@ -112,4 +81,32 @@ def seleccionar_asientos(request, evento_id):
 
 @admin_required
 def crear_evento(request):
-    return render(request, 'crear_evento.html')
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id, nombre FROM establecimientos")
+    establecimientos = cursor.fetchall()
+
+    if request.method == 'POST':
+        nombre = request.POST['nombre']
+        fecha_hora = request.POST['fecha_hora']
+        establecimiento_id = request.POST['establecimiento']
+
+        cursor.execute("""
+            INSERT INTO eventos (nombre, fecha_hora, establecimiento_id)
+            VALUES (%s, %s, %s)
+        """, (nombre, fecha_hora, establecimiento_id))
+        evento_id = cursor.lastrowid
+
+        for zona in ['vip', 'preferencial', 'general']:
+            precio = request.POST.get(f'precio_{zona}')
+            if precio:
+                cursor.execute("INSERT INTO precios_evento (evento_id, zona, precio) VALUES (%s, %s, %s)",
+                               (evento_id, zona, precio))
+
+        conn.commit()
+        conn.close()
+        messages.success(request, 'Evento creado con éxito')
+        return redirect('inicio')
+
+    conn.close()
+    return render(request, 'crear_evento.html', {'establecimientos': establecimientos})

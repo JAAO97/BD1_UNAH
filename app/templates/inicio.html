@@ -3,48 +3,31 @@
 
 {% block content %}
 <div class="text-center my-5">
-    <h1 class="display-4 fw-bold text-primary">🎫 JAAO Tickets</h1>
-    <p class="lead">Compra tus boletas para los mejores eventos del país</p>
+    <h1 class="display-3 fw-bold text-primary">JAAO Tickets</h1>
+    <p class="lead text-muted">La mejor boletería de Honduras</p>
 </div>
 
-{% if not eventos %}
-<div class="alert alert-info text-center">
-    <h4>No hay eventos disponibles en este momento</h4>
-</div>
-{% else %}
-<div class="row row-cols-1 row-cols-md-3 g-4">
+<div class="row row-cols-1 row-cols-md-3 g-5">
     {% for evento in eventos %}
     <div class="col">
-        <div class="card h-100 shadow-sm hover-shadow">
+        <div class="card h-100 border-0 shadow-lg">
             {% if evento.imagen_portada %}
-            <img src="/uploads/{{ evento.imagen_portada }}" class="card-img-top" alt="{{ evento.nombre }}" style="height: 220px; object-fit: cover;">
+            <img src="/uploads/{{ evento.imagen_portada }}" class="card-img-top" style="height: 220px; object-fit: cover;">
             {% else %}
-        <div class="bg-primary d-flex align-items-center justify-content-center text-white" style="height: 220px;">
-            <h2 class="mb-0">{{ evento.nombre|slice:":2"|upper }}</h2>
-        </div>
-        {% endif %}
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">{{ evento.nombre }}</h5>
-                <p class="card-text text-muted">
-                    <strong>Fecha:</strong> {{ evento.fecha_hora|date:"d/m/Y H:i" }}<br>
-                    <strong>Lugar:</strong> {{ evento.establecimiento_nombre }}
-                </p>
-                <div class="mt-auto">
-                    <a href="{% url 'detalle_evento' evento.id %}" class="btn btn-primary w-100 stretched-link">Ver Evento y Comprar</a>
-                </div>
+            <div class="card-img-top bg-primary text-white d-flex align-items-center justify-content-center" style="height: 220px;">
+                <h2>{{ evento.nombre|upper }}</h2>
             </div>
-            <div class="card-footer text-muted small">
-                Creado el {{ evento.fecha_creacion|date:"d/m/Y" }}
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title fw-bold">{{ evento.nombre }}</h5>
+                <p class="card-text text-muted">
+                    <i class="bi bi-calendar"></i> {{ evento.fecha_hora|date:"d/m/Y H:i" }}<br>
+                    <i class="bi bi-geo-alt"></i> {{ evento.establecimiento_nombre }}
+                </p>
+                <a href="{% url 'detalle_evento' evento.id %}" class="btn btn-primary mt-auto">Comprar en Lempiras</a>
             </div>
         </div>
     </div>
     {% endfor %}
 </div>
-{% endif %}
 {% endblock %}
-
-{% if session.rol_id == 2 %}
-<div style="position: fixed; bottom: 40px; right: 40px; z-index: 9999;">
-    <a href="{% url 'crear_evento' %}" class="btn btn-success rounded-circle shadow-lg" style="width: 80px; height: 80px; font-size: 40px;">+</a>
-</div>
-{% endif %}

@@ -14,7 +14,7 @@ urlpatterns = [
     #path('subir-comprobante/', views.subir_comprobante, name='subir_comprobante'),
     
     # Admin
-    #path('admin/crear-evento/', views.crear_evento, name='crear_evento'),
+    path('admin/crear-evento/', views.crear_evento, name='crear_evento'),
     #path('admin/pagos-pendientes/', views.pagos_pendientes, name='pagos_pendientes'),
     #path('admin/aprobar-pago/<int:pago_id>/', views.aprobar_pago, name='aprobar_pago'),
     #path('admin/rechazar-pago/<int:pago_id>/', views.rechazar_pago, name='rechazar_pago'),

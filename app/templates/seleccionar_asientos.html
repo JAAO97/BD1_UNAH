@@ -3,53 +3,31 @@
 
 {% block content %}
 <div class="container my-5">
-    <h1 class="text-center fw-bold">{{ evento.nombre }}</h1>
-    <p class="text-center lead">{{ evento.establecimiento_nombre }}</p>
+    <h1 class="text-center fw-bold display-4">{{ evento.nombre }}</h1>
+    <p class="text-center lead mb-5">{{ evento.establecimiento_nombre }}</p>
 
     <div class="text-center mb-5">
-        <span class="badge bg-warning text-dark fs-5 me-3">VIP</span>
-        <span class="badge bg-primary fs-5 me-3">Preferencial</span>
-        <span class="badge bg-success fs-5 me-3">General</span>
-        <span class="badge bg-danger fs-5 me-3">Ocupado</span>
-        <span class="badge" style="background: #ff9f1c; color: white;">Seleccionado</span>
-    </div>
-
-    <div class="text-center mb-5">
-        <div class="bg-dark text-white py-4 px-5 rounded shadow" style="display: inline-block;">
+        <div class="bg-dark text-white py-4 px-5 rounded shadow d-inline-block">
             <h2>ESCENARIO</h2>
         </div>
     </div>
 
-    <div class="d-flex justify-content-center">
-        <div style="display: grid; grid-template-columns: repeat({{ evento.columnas }}, 60px); gap: 10px;">
-            {% for asiento in asientos %}
-            <label class="d-block">
-                <input type="checkbox" name="asientos" value="{{ asiento.id }}" class="d-none" {% if asiento.ocupado %}disabled{% endif %}>
-                <div class="border rounded text-center text-white fw-bold" style="width: 60px; height: 60px; line-height: 60px; cursor: pointer;
-                     background: {% if asiento.ocupado %}#dc3545
-                                  {% elif asiento.zona == 'vip' %}gold
-                                  {% elif asiento.zona == 'preferencial' %}#0d6efd
-                                  {% else %}#198754{% endif %};"
-                     onclick="this.previousElementSibling.click(); this.classList.toggle('selected', this.previousElementSibling.checked)">
-                    {{ asiento.fila }}{{ asiento.columna }}
-                </div>
-            </label>
-            {% endfor %}
+    <div class="d-flex justify-content-center flex-wrap gap-3">
+        {% for asiento in asientos %}
+        <div class="text-center">
+            <div class="border rounded shadow text-white fw-bold d-flex align-items-center justify-content-center" 
+                 style="width: 60px; height: 60px; background: {% if asiento.ocupado %}#dc3545{% elif asiento.zona == 'vip' %}gold{% elif asiento.zona == 'preferencial' %}#0d6efd{% else %}#198754{% endif %}; cursor: pointer;"
+                 onclick="this.style.background = '#ff6d00'; this.innerHTML = 'X'">
+                {{ asiento.fila }}{{ asiento.columna }}
+            </div>
         </div>
+        {% endfor %}
     </div>
 
     <div class="text-center mt-5">
-        <button class="btn btn-success btn-lg px-5" style="font-size: 1.5rem;">
+        <button class="btn btn-success btn-lg px-5 shadow" style="font-size: 1.5rem;">
             Pagar en Lempiras
         </button>
     </div>
 </div>
-
-<style>
-.selected {
-    background: #ff9f1c !important;
-    transform: scale(1.2);
-    box-shadow: 0 0 20px #ff9f1c;
-}
-</style>
 {% endblock %}

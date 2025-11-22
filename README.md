@@ -28,5 +28,8 @@ Sistema de venta de boletas para eventos con selección de asientos visual, pago
 4. `python manage.py runserver`
 
 Usuario admin: j@gmail.com / 123
+               p3@gmail.com / 123
+
+Usuario estandar: prueba@gmail.com / 123                
 
 ¡Listo para usar!

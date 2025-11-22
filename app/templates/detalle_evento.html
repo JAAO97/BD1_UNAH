@@ -3,46 +3,62 @@
 
 {% block content %}
 <div class="container my-5">
-    <div class="row g-5">
+    <div class="row g-5 align-items-center">
         <div class="col-lg-6">
             {% if evento.imagen_portada %}
-                <img src="/uploads/{{ evento.imagen_portada }}" class="img-fluid rounded shadow-lg" alt="{{ evento.nombre }}" style="max-height: 500px; object-fit: cover;">
+            <img src="/uploads/{{ evento.imagen_portada }}" class="img-fluid rounded shadow-lg" style="max-height: 500px; object-fit: cover;">
             {% else %}
-                <div class="bg-gradient d-flex align-items-center justify-content-center rounded shadow-lg text-white" style="height: 500px; background: linear-gradient(135deg, #667eea, #764ba2);">
-                    <h1 class="display-1 fw-bold">{{ evento.nombre|make_list|first|upper }}</h1>
-                </div>
+            <div class="bg-primary text-white d-flex align-items-center justify-content-center rounded shadow-lg" style="height: 500px;">
+                <h1 class="display-3">{{ evento.nombre|upper }}</h1>
+            </div>
             {% endif %}
         </div>
-        <div class="col-lg-6 d-flex flex-column justify-content-center">
+        <div class="col-lg-6">
             <h1 class="display-4 fw-bold text-primary mb-3">{{ evento.nombre }}</h1>
-            <p class="lead text-muted mb-2">
-                <strong>Fecha y hora:</strong> {{ evento.fecha_hora|date:"d \d\e F \d\e Y \a \l\a\s H:i" }}
+            <p class="lead text-muted mb-4">
+                <i class="bi bi-calendar-event"></i> {{ evento.fecha_hora|date:"d \d\e F \d\e Y \a \l\a\s H:i" }}<br>
+                <i class="bi bi-geo-alt-fill"></i> {{ evento.establecimiento_nombre }}
             </p>
-            <p class="fs-3 mb-4 text-success fw-bold">{{ evento.establecimiento_nombre }}</p>
 
-            <div class="card border-0 shadow">
-                <div class="card-header bg-dark text-white">
-                    <h4 class="mb-0">Precios por zona</h4>
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-dark text-white text-center">
+                    <h3 class="mb-0">Selecciona tus boletos en Lempiras</h3>
                 </div>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span class="badge bg-warning text-dark fs-5">VIP</span>
-                        <span class="text-success fs-4 fw-bold">L{{ precios.vip|default:"5,000"|floatformat:0 }}</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span class="badge bg-primary fs-5">Preferencial</span>
-                        <span class="text-success fs-4 fw-bold">L{{ precios.preferencial|default:"3,500"|floatformat:0 }}</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span class="badge bg-success fs-5">General</span>
-                        <span class="text-success fs-4 fw-bold">L{{ precios.general|default:"2,000"|floatformat:0 }}</span>
-                    </li>
-                </ul>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <div class="text-center p-3 border rounded shadow-sm bg-warning text-dark">
+                                    <h5 class="fw-bold">VIP</h5>
+                                    <p class="fs-4 mb-2">L{{ precios.vip|default:"5000"|floatformat:0 }}</p>
+                                    <input type="number" name="cantidad_vip" min="0" max="10" value="0" class="form-control form-control-lg text-center">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-3 border rounded shadow-sm bg-primary text-white">
+                                    <h5 class="fw-bold">Preferencial</h5>
+                                    <p class="fs-4 mb-2">L{{ precios.preferencial|default:"3500"|floatformat:0 }}</p>
+                                    <input type="number" name="cantidad_preferencial" min="0" max="10" value="0" class="form-control form-control-lg text-center">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-3 border rounded shadow-sm bg-success text-white">
+                                    <h5 class="fw-bold">General</h5>
+                                    <p class="fs-4 mb-2">L{{ precios.general|default:"2000"|floatformat:0 }}</p>
+                                    <input type="number" name="cantidad_general" min="0" max="10" value="0" class="form-control form-control-lg text-center">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-success btn-lg px-5 shadow-lg" style="font-size: 1.5rem;">
+                                Comprar Boletos
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-
-            <a href="{% url 'seleccionar_asientos' evento.id %}" class="btn btn-success btn-lg mt-4 shadow-lg w-100 py-3 fs-4">
-                Comprar Boletos Ahora
-            </a>
         </div>
     </div>
 </div>

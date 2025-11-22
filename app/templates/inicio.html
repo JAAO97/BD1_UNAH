@@ -2,32 +2,60 @@
 {% block title %} - Inicio{% endblock %}
 
 {% block content %}
-<div class="text-center my-5">
-    <h1 class="display-3 fw-bold text-primary">JAAO Tickets</h1>
-    <p class="lead text-muted">La mejor boletería de Honduras</p>
-</div>
+<div class="container my-5">
+    <div class="text-center mb-5">
+        <h1 class="display-3 fw-bold text-primary">JAAO Tickets</h1>
+        <p class="lead text-muted">La mejor boletería de Honduras</p>
+    </div>
 
-<div class="row row-cols-1 row-cols-md-3 g-5">
-    {% for evento in eventos %}
-    <div class="col">
-        <div class="card h-100 border-0 shadow-lg">
-            {% if evento.imagen_portada %}
-            <img src="/uploads/{{ evento.imagen_portada }}" class="card-img-top" style="height: 220px; object-fit: cover;">
-            {% else %}
-            <div class="card-img-top bg-primary text-white d-flex align-items-center justify-content-center" style="height: 220px;">
-                <h2>{{ evento.nombre|upper }}</h2>
-            </div>
-            {% endif %}
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title fw-bold">{{ evento.nombre }}</h5>
-                <p class="card-text text-muted">
-                    <i class="bi bi-calendar"></i> {{ evento.fecha_hora|date:"d/m/Y H:i" }}<br>
-                    <i class="bi bi-geo-alt"></i> {{ evento.establecimiento_nombre }}
-                </p>
-                <a href="{% url 'detalle_evento' evento.id %}" class="btn btn-primary mt-auto">Comprar en Lempiras</a>
+    {% if eventos %}
+    <div class="row row-cols-1 row-cols-md-3 g-5">
+        {% for evento in eventos %}
+        <div class="col">
+            <div class="card h-100 shadow-lg border-0 position-relative overflow-hidden">
+                {% if evento.imagen_portada %}
+                <img src="/uploads/{{ evento.imagen_portada }}" class="card-img-top" style="height: 220px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-primary text-white d-flex align-items-center justify-content-center" style="height: 220px;">
+                    <h2 class="mb-0">{{ evento.nombre|upper }}</h2>
+                </div>
+                {% endif %}
+
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title fw-bold">{{ evento.nombre }}</h5>
+                    <p class="card-text text-muted">
+                        <i class="bi bi-calendar-event"></i> {{ evento.fecha_hora|date:"d/m/Y H:i" }}<br>
+                        <i class="bi bi-geo-alt-fill"></i> {{ evento.establecimiento_nombre }}
+                    </p>
+                    <a href="{% url 'detalle_evento' evento.id %}" class="btn btn-primary mt-auto">
+                        Comprar en Lempiras
+                    </a>
+                </div>
+
+                
+                {% if session.rol_id == 2 %}
+                <a href="{% url 'borrar_evento' evento.id %}" 
+                   class="position-absolute top-0 end-0 btn btn-danger rounded-pill shadow-lg m-3 px-4 py-2"
+                   onclick="return confirm('¿Estás seguro de eliminar este evento para siempre?')">
+                    <i class="bi bi-trash-fill me-2"></i>Eliminar
+                </a>
+                {% endif %}
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+    {% else %}
+    <div class="alert alert-info text-center">
+        <h4>No hay eventos disponibles en este momento</h4>
+    </div>
+    {% endif %}
 </div>
+
+{% if session.rol_id == 2 %}
+<a href="{% url 'crear_evento' %}" class="position-fixed btn btn-success rounded-circle shadow-lg d-flex align-items-center justify-content-center" 
+   style="bottom: 40px; right: 40px; width: 90px; height: 90px; font-size: 50px; z-index: 9999; border: 8px solid white; background: linear-gradient(135deg, #28a745, #20c997);">
+    +
+</a>
+{% endif %}
+
 {% endblock %}
